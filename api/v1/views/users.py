@@ -53,7 +53,7 @@ def delete_user(user_id):
       required: true
       description: The ID of the user
   responses:
-    200:
+    204:
       description: User deleted successfully
     404:
       description: User not found
@@ -62,51 +62,30 @@ def delete_user(user_id):
   if not user:
     abort(404)
   
-  storage.delete(user)
+  user.delete()
   storage.save()
-  return make_response(jsonify({}), 200)
+  return make_response(jsonify({}), 204)
 
 @app_views.route('/users', methods=['POST'],
                  strict_slashes=False)
-def post_user():
+def create_user():
   """ Creates a user
   ---
   parameters:
-    - name: first_name
-      in: query
-      type: string
-      required: true
-      description: The first name of the user
-    - name: last_name
-      in: query
-      type: string
-      required: true
-      description: The last name of the user
-    - name: email
-      in: query
-      type: string
-      required: true
-      description: The email of the user
-  requestBody:
-    required: true
-    content:
-      application/json:
-        schema:
-          type: object
-          required:
-            - email
-            - first_name
-            - last_name
-          properties:
-            email:
-              type: string
-              description: The email for the user
-            first_name:
-              type: string
-              description: The first name of the user
-            last_name:
-              type: string
-              description: The last name of the user
+      - name: user_and_password
+        in: body
+        required: true
+        requires:
+          - email:
+          - first_name:
+          - last_name
+        properties:
+          email:
+            type: string
+          first_name:
+            type: string
+          last_name:
+            type: string
   responses:
     201:
       description: User created successfully
@@ -114,12 +93,14 @@ def post_user():
       description: Invalid JSON or missing parameters
   """
   if not request.get_json():
-    abort(400, description="Not valid JSON")
+    abort(400, description="Invalid JSON")
   
   if 'email' not in request.get_json():
     abort(400, description="Missing email")
-  if 'password' not in request.get_json():
-    abort(400, description="Missing password")
+  if 'first_name' not in request.get_json():
+    abort(400, description="Missing first name")
+  if 'last_name' not in request.get_json():
+    abort(400, description="Missing last name")
 
   request_data = request.get_json()
   new_user = User(**request_data)
@@ -132,31 +113,31 @@ def update_user(user_id):
   """ Updates a user
   ---
   parameters:
-    - name: first_name
-      in: query
-      type: string
-      required: true
-      description: The first name of the user
-    - name: last_name
-      in: query
-      type: string
-      required: true
-      description: The last name of the user
-    - name: email
-      in: query
-      type: string
-      required: true
-      description: The email of the user
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: The ID of the user
+      - name: user_and_password
+        in: body
+        required: true
+        requires:
+          - email:
+          - first_name:
+          - last_name
+        properties:
+          email:
+            type: string
+          first_name:
+            type: string
+          last_name:
+            type: string
   requestBody:
     required: true
     content:
       application/json:
         schema:
           type: object
-          required:
-            - email
-            - first_name
-            - last_name
           properties:
             email:
               type: string
@@ -177,7 +158,7 @@ def update_user(user_id):
   if not user:
     abort(404)
   if not request.get_json():
-    abort(400, description="Not a JSON")
+    abort(400, description="Invalid JSON")
   
   ignore = ['id', 'email', 'created_at', 'updated_at']
 
@@ -185,5 +166,5 @@ def update_user(user_id):
   for key, value in data.items():
     if key not in ignore:
       setattr(user, key, value)
-  storage.save()
-  return make_response(jsonify(user.to_dict()), 200)
+  user.save()
+  return make_response(jsonify(user.to_dict()), 201)

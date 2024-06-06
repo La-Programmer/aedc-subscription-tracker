@@ -4,7 +4,7 @@ Contains the class DBStorage
 """
 
 import models
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from models.base_model import Base, BaseModel
 from models.user import User
 from models.subscription import Subscription
@@ -46,14 +46,19 @@ class DBStorage:
   def get(self, cls, id):
     """ Gets an object of a class by ID """
     for clss in classes:
-      if cls is classes[cls] or cls is  clss:
+      if cls is classes[clss] or cls is  clss:
         obj = self.__session.query(classes[clss]).get(id)
     return (obj)
   
+  def get_user_by_email(self, email):
+    """ Gets a user by email """
+    result = self.__session.query(User).filter_by(email=email).first()
+    return(result)
+  
   def new(self, obj):
     """Adds a newly created object to the DB session"""
-    print("Got here")
-    print(obj)
+    # print("Got here")
+    # print(obj)
     self.__session.add(obj)
 
   def save(self):
