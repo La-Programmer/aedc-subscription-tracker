@@ -9,9 +9,12 @@ from models.base_model import Base, BaseModel
 from models.user import User
 from models.subscription import Subscription
 from sqlalchemy.orm import scoped_session, sessionmaker
-from os import environ
+from os import getenv
+from dotenv import load_dotenv
 
 
+# Load environment variables
+load_dotenv()
 # declare classes
 classes = {"User": User, "Subscription": Subscription}
 
@@ -22,17 +25,12 @@ class DBStorage:
 
   def __init__(self):
     """Instantiate a DBStorage object"""
-    USER=environ.get('USER')
-    PASSWORD=environ.get('PASSWORD')
-    HOST=environ.get('HOST')
-    DB=environ.get('DB') 
+    USER=getenv("USER")
+    PASSWORD=getenv("PASSWORD")
+    HOST=getenv("HOST")
+    DB=getenv("DB") 
     print(f'{USER}, {PASSWORD}, {HOST}, {DB}')
-    self.__engine = create_engine('mysql+mysqldb://{}:{}@{}/{}'.format(
-      USER,
-      PASSWORD,
-      HOST,
-      DB
-      ))
+    self.__engine = create_engine(f'mysql+mysqldb://{USER}:{PASSWORD}@{HOST}/{DB}')
     
   def all(self, cls=None):
     """ Gets all objects of a specific class, or all classes """
