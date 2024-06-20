@@ -2,6 +2,8 @@
 """ User API endpoints """
 from models.user import User
 from models import storage
+import requests
+import json
 from api.v1.views import app_views
 from flask import abort, jsonify, make_response, request
 
@@ -68,44 +70,68 @@ def delete_user(user_id):
 
 @app_views.route('/users', methods=['POST'],
                  strict_slashes=False)
-def create_user():
-  """ Creates a user
+def user_auth():
+  """ Authenticates a user
   ---
   parameters:
       - name: user_and_password
         in: body
         required: true
         requires:
-          - email:
-          - first_name:
-          - last_name
+          - username:
+          - password:
         properties:
-          email:
+          username:
             type: string
-          first_name:
-            type: string
-          last_name:
+          password:
             type: string
   responses:
-    201:
-      description: User created successfully
+    200:
+      description: User authentication successful
     400:
       description: Invalid JSON or missing parameters
+    404:
+      description: Authentication failed
   """
   if not request.get_json():
     abort(400, description="Invalid JSON")
   
-  if 'email' not in request.get_json():
-    abort(400, description="Missing email")
-  if 'first_name' not in request.get_json():
-    abort(400, description="Missing first name")
-  if 'last_name' not in request.get_json():
-    abort(400, description="Missing last name")
+  if 'username' not in request.get_json():
+    abort(400, description="Missing username")
+  if 'password' not in request.get_json():
+    abort(400, description="Missing password")
 
   request_data = request.get_json()
-  new_user = User(**request_data)
-  new_user.save()
-  return make_response(jsonify(new_user.to_dict()), 201)
+  response_from_ad_service = requests.post(
+    'https://adservice.abujaelectricity.com/auth/detail',
+    request_data
+  )
+  response = response_from_ad_service.json()
+  print(response)
+  if (response['status_code'] == '404'):
+    print("GOT TO CONDITIONAL STATEMENT")
+    abort(404)
+  elif (response['status_code'] == '200'):
+    response_data = response['data']
+    print(response_data['mail'])
+    print("GOT TO THE ELSE OF THE CONDITIONAL STATEMENT")
+    user_object = {
+      'email': response_data['mail'],
+      'first_name': response_data['firstname'],
+      'last_name': response_data['surname']
+    }
+    if (storage.get_user_by_email(response_data['mail'])):
+      return make_response(jsonify(user_object), 200)
+    else:
+      try:
+        new_user = User(**user_object)
+      except requests.exceptions.HTTPError as err:
+          abort(err.response.status_code, description=err.response)
+      finally:
+        new_user.save()
+        return make_response(jsonify(user_object), 200)
+  else:
+    abort(response['status_code'], description=response['msg'])
 
 @app_views.route('/users/<user_id>', methods=['PUT'],
                  strict_slashes=False)

@@ -7,8 +7,12 @@ from flask import Flask, make_response, jsonify
 from flasgger import Swagger
 from celery.schedules import crontab
 from ..celery_config import celery_init_app
+from flask_cors import CORS
+import logging
 
 app = Flask(__name__)
+logger = logging.getLogger(__name__)
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 app.config.from_mapping(
     CELERY=dict(
         broker_url="redis://localhost:6379/0",
@@ -27,9 +31,10 @@ app.config['SWAGGER'] = {
     'title': 'AEDC Subscription Tracking Application',
     'uiversion': 3
 }
+
 celery_app = celery_init_app(app)
-# celery_app.set_default()
 app.register_blueprint(app_views)
+logging.basicConfig(filename='app.log', level=logging.DEBUG)
 
 @app.teardown_appcontext
 def close_db(error):
@@ -53,3 +58,4 @@ if __name__ == "__main__":
     host = '0.0.0.0'
     port = '5000'
     app.run(debug=True, host=host, port=port, threaded=True)
+    logger.info("App is up and running")

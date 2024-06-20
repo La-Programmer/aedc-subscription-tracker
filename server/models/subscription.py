@@ -42,3 +42,16 @@ class Subscription(BaseModel, Base):
       kwargs['users'] = stakeholders_array
       # print(kwargs)
     super().__init__(*args, **kwargs)
+  
+  def make_dashboard_response(self):
+    """ Formats a subscription object to only return necessay info to dashboard """
+    subscription_dict = self.to_dict()
+    users = models.storage.get_users_associated_with_a_subscription(self.id)
+    # print("Users", users)
+    result = {}
+    necessary_keys = ['subscription_name', 'subscription_status', 'start_date', 'expiry_date', 'users']
+    for key in subscription_dict.keys():
+      if key in necessary_keys:
+        result[key] = subscription_dict[key]
+    result['users'] = users
+    return result

@@ -15,6 +15,15 @@ class User(BaseModel, Base):
   def __init__(self, *args, **kwargs):
     "Iinitializes user"
     super().__init__(*args, **kwargs)
+  
+  def make_user_object(self):
+    """Makes user response for front-end"""
+    user_dict = self.to_dict()
+    keys = ['email', 'first_name', 'last_name', 'id']
+    for key in user_dict.keys():
+      if key not in keys:
+        del user_dict[key]
+    return user_dict
     # print("New User successfully created")
   
   # def create_subscription(self, *args, **kwargs):

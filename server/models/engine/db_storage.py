@@ -52,9 +52,21 @@ class DBStorage:
   
   def get_user_by_email(self, email):
     """ Gets a user by email """
+    # print("GOT HERE!!!!!!!!!!!")
     result = self.__session.query(User).filter_by(email=email).first()
+    # print("Result", result)
     return(result)
-  
+
+  def get_users_associated_with_a_subscription(self, subscription_id):
+    """Gets the users associated with a subscription"""
+    # print("GOT HERE!!!!!!!!!!!")
+    subscription = self.__session.query(Subscription).filter_by(id=subscription_id).first()
+    users = []
+    for user in subscription.users:
+      users.append(user.email)
+    # print("Users associated with subscription", users)
+    return(users)
+
   def new(self, obj):
     """Adds a newly created object to the DB session"""
     # print("Got here")

@@ -18,9 +18,10 @@ def get_subscriptions():
       description: All subscriptions gotten successfully
   """
   all_subscriptions = storage.all(Subscription).values()
+  # print(all_subscriptions)
   list_subscriptions = []
   for subscription in all_subscriptions:
-    list_subscriptions.append(subscription.to_dict())
+    list_subscriptions.append(subscription.make_dashboard_response())
   return (jsonify(list_subscriptions)), 200
 
 @app_views.route('/subscriptions/<subscription_id>', methods=['GET'],
