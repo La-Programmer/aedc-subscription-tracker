@@ -120,8 +120,9 @@ def user_auth():
       'first_name': response_data['firstname'],
       'last_name': response_data['surname']
     }
-    if (storage.get_user_by_email(response_data['mail'])):
-      return make_response(jsonify(user_object), 200)
+    user = storage.get_user_by_email(response_data['mail'])
+    if (user):
+      return make_response(jsonify(user.make_user_response()), 200)
     else:
       try:
         new_user = User(**user_object)
@@ -129,7 +130,7 @@ def user_auth():
           abort(err.response.status_code, description=err.response)
       finally:
         new_user.save()
-        return make_response(jsonify(user_object), 200)
+        return make_response(jsonify(new_user.make_user_response()), 200)
   else:
     abort(response['status_code'], description=response['msg'])
 

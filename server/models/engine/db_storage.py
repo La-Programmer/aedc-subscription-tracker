@@ -54,7 +54,7 @@ class DBStorage:
     """ Gets a user by email """
     # print("GOT HERE!!!!!!!!!!!")
     result = self.__session.query(User).filter_by(email=email).first()
-    # print("Result", result)
+    print("Result", result)
     return(result)
 
   def get_users_associated_with_a_subscription(self, subscription_id):

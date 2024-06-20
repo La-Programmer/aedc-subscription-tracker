@@ -16,7 +16,7 @@ class User(BaseModel, Base):
     "Iinitializes user"
     super().__init__(*args, **kwargs)
   
-  def make_user_object(self):
+  def make_user_response(self):
     """Makes user response for front-end"""
     user_dict = self.to_dict()
     keys = ['email', 'first_name', 'last_name', 'id']
