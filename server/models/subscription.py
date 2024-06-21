@@ -3,7 +3,7 @@
 
 from models.base_model import BaseModel , Base
 import models
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Table
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Table, DECIMAL, Text
 from datetime import datetime
 from sqlalchemy.orm import relationship
 
@@ -22,6 +22,8 @@ class Subscription(BaseModel, Base):
   __tablename__ = 'subscriptions'
   subscription_name = Column(String(1024), nullable=False)
   subscription_status = Column(Boolean, nullable=False, default=True)
+  subscription_cost = Column(DECIMAL, nullable=False, default=0.00)
+  subscription_description = Column(Text, nullable=False)
   start_date = Column(DateTime, default=datetime.now(), nullable=False)
   expiry_date = Column(DateTime, nullable=False)
   last_notification = Column(DateTime, default=None)
@@ -43,13 +45,18 @@ class Subscription(BaseModel, Base):
       # print(kwargs)
     super().__init__(*args, **kwargs)
   
-  def make_dashboard_response(self):
+  def make_subscription_response(self):
     """ Formats a subscription object to only return necessay info to dashboard """
     subscription_dict = self.to_dict()
     users = models.storage.get_users_associated_with_a_subscription(self.id)
     # print("Users", users)
     result = {}
-    necessary_keys = ['subscription_name', 'subscription_status', 'start_date', 'expiry_date', 'users']
+    necessary_keys = ['subscription_name',
+                      'subscription_status',
+                      'start_date',
+                      'expiry_date',
+                      'users',
+                      'subscription_cost']
     for key in subscription_dict.keys():
       if key in necessary_keys:
         result[key] = subscription_dict[key]

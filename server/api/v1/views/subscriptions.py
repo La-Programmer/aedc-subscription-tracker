@@ -91,6 +91,8 @@ def create_subscription(user_id):
         - subscription_name:
         - expiry_date:
         - users
+        - subscription_cost
+        - subscription_description
       properties:
         subscription_name:
           type: string
@@ -99,6 +101,10 @@ def create_subscription(user_id):
         expiry_date:
           type: string
         users:
+          type: string
+        subscription_cost:
+          type: integer
+        subscription_description:
           type: string
   responses:
     201:
@@ -125,8 +131,8 @@ def create_subscription(user_id):
   new_subscription = Subscription(subscription_creator, **request_data)
   # print(type(new_subscription))
   new_subscription.save()
-  print(new_subscription.to_dict())
-  return make_response(jsonify(new_subscription.to_dict()), 201)
+  print(new_subscription.make_subscription_response())
+  return make_response(jsonify(new_subscription.make_subscription_response()), 201)
 
 @app_views.route('/subscriptions/<subscription_id>', methods=['PUT'],
                  strict_slashes=False)

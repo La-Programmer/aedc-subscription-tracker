@@ -19,11 +19,12 @@ class User(BaseModel, Base):
   def make_user_response(self):
     """Makes user response for front-end"""
     user_dict = self.to_dict()
+    result = {}
     keys = ['email', 'first_name', 'last_name', 'id']
     for key in user_dict.keys():
-      if key not in keys:
-        del user_dict[key]
-    return user_dict
+      if key in keys:
+        result[key] = user_dict[key]
+    return result
     # print("New User successfully created")
   
   # def create_subscription(self, *args, **kwargs):
@@ -33,4 +34,3 @@ class User(BaseModel, Base):
   #   # print("New subscription created by user {}: {}".format(self.first_name,
   #                                                         #  new_subscription))
   #   return(new_subscription)
-    
