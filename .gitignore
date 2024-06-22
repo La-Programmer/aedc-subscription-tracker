@@ -2,6 +2,6 @@ venv/
 tests/
 *cpython*
 *__pycache__*
-app.log
+*app.log
 dump.rdb
 .env
