@@ -4,7 +4,7 @@ from models.subscription import Subscription
 from models.user import User
 from models import storage
 from api.v1.views import app_views
-from flask import abort, jsonify, make_response, request
+from flask import abort, jsonify, make_response, current_app, request
 from datetime import datetime
 
 @app_views.route('/subscriptions', methods=['GET'],
@@ -69,6 +69,7 @@ def delete_subscription(subscription_id):
   if not subscription:
     abort(404)
   
+  current_app.logger.critical(f"Subscription {subscription.to_dict()['subscription_name']} has been deleted")
   subscription.delete()
   storage.save()
   return make_response(jsonify({}), 204)
@@ -80,10 +81,6 @@ def create_subscription(user_id):
   ---
   tags: S
   parameters:
-    - name: user_id
-      in: path
-      required: true
-      description: The ID of the user creating the subscription
     - name: subscription_data
       in: body
       required: true
@@ -131,7 +128,9 @@ def create_subscription(user_id):
   new_subscription = Subscription(subscription_creator, **request_data)
   # print(type(new_subscription))
   new_subscription.save()
-  print(new_subscription.make_subscription_response())
+  subscription_response = new_subscription.make_subscription_response()
+  current_app.logger.critical(f"Subscription {subscription_response['subscription_name']} has been created")
+  print(subscription_response)
   return make_response(jsonify(new_subscription.make_subscription_response()), 201)
 
 @app_views.route('/subscriptions/<subscription_id>', methods=['PUT'],
@@ -180,4 +179,6 @@ def update_subscription(subscription_id):
       if key in data.keys():
         setattr(subscription, key, value)
   subscription.save()
-  return make_response(jsonify(subscription.to_dict()), 200)
+  subscription_response = subscription.make_subscription_response()
+  current_app.logger.critical(f"Subscription {subscription_response['subscription_name']} has been updated")
+  return make_response(jsonify(subscription_response), 200)

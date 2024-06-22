@@ -5,7 +5,7 @@ from models import storage
 import requests
 import json
 from api.v1.views import app_views
-from flask import abort, jsonify, make_response, request
+from flask import abort, jsonify, make_response, current_app, request
 
 @app_views.route('/users', methods=['GET'], strict_slashes=False)
 def get_users():
@@ -66,6 +66,7 @@ def delete_user(user_id):
   
   user.delete()
   storage.save()
+  current_app.logger.critical(f"User {user_id} has been deleted")
   return make_response(jsonify({}), 204)
 
 @app_views.route('/users', methods=['POST'],
@@ -102,10 +103,16 @@ def user_auth():
     abort(400, description="Missing password")
 
   request_data = request.get_json()
-  response_from_ad_service = requests.post(
-    'https://adservice.abujaelectricity.com/auth/detail',
-    request_data
-  )
+
+  try:
+    response_from_ad_service = requests.post(
+      'https://adservice.abujaelectricity.com/auth/detail',
+      request_data
+    )
+    current_app.logger.critical("User successfully authenticated")
+  except Exception as e:
+    current_app.logger.critical("AD service not available")
+    abort(404)
   response = response_from_ad_service.json()
   print(response)
   if (response['status_code'] == '404'):
@@ -122,6 +129,8 @@ def user_auth():
     }
     user = storage.get_user_by_email(response_data['mail'])
     if (user):
+      user_response = user.make_user_response()
+      current_app.logger.critical("Existing user has logged in")
       return make_response(jsonify(user.make_user_response()), 200)
     else:
       try:
@@ -130,7 +139,9 @@ def user_auth():
           abort(err.response.status_code, description=err.response)
       finally:
         new_user.save()
-        return make_response(jsonify(new_user.make_user_response()), 200)
+        user_response = user.make_user_response()
+        current_app.logger.critical("New user has been created and logged in")
+        return make_response(jsonify(user_response), 200)
   else:
     abort(response['status_code'], description=response['msg'])
 
@@ -194,4 +205,5 @@ def update_user(user_id):
     if key not in ignore:
       setattr(user, key, value)
   user.save()
-  return make_response(jsonify(user.to_dict()), 201)
+  current_app.logger.critical("User information has been updated")
+  return make_response(jsonify(user.make_user_response()), 201)
