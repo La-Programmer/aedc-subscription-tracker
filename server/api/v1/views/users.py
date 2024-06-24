@@ -5,8 +5,9 @@ from models import storage
 import requests
 import json
 from api.v1.views import app_views
-from flask import abort, jsonify, make_response, current_app, request
+from flask import abort, jsonify, make_response, current_app, request, session
 
+# @check_user_authenticated(current_app)
 @app_views.route('/users', methods=['GET'], strict_slashes=False)
 def get_users():
   """Retrieves the list of all users
@@ -116,7 +117,6 @@ def user_auth():
   response = response_from_ad_service.json()
   print(response)
   if (response['status_code'] == '404'):
-    print("GOT TO CONDITIONAL STATEMENT")
     abort(404)
   elif (response['status_code'] == '200'):
     response_data = response['data']
@@ -131,16 +131,21 @@ def user_auth():
     if (user):
       user_response = user.make_user_response()
       current_app.logger.critical("Existing user has logged in")
+      session['user'] = user_response
       return make_response(jsonify(user.make_user_response()), 200)
     else:
       try:
         new_user = User(**user_object)
       except requests.exceptions.HTTPError as err:
+          current_app.logger.critical(
+            f"New user could not be created due to error: {err.response.status_code} {err.response}"
+          )
           abort(err.response.status_code, description=err.response)
       finally:
         new_user.save()
         user_response = user.make_user_response()
         current_app.logger.critical("New user has been created and logged in")
+        session['user'] = user_response
         return make_response(jsonify(user_response), 200)
   else:
     abort(response['status_code'], description=response['msg'])

@@ -4,7 +4,8 @@ from models.subscription import Subscription
 from models.user import User
 from models import storage
 from api.v1.views import app_views
-from flask import abort, jsonify, make_response, current_app, request
+from ..email_service import send_welcome_email_task
+from flask import abort, jsonify, make_response, current_app, request, session
 from datetime import datetime
 
 @app_views.route('/subscriptions', methods=['GET'],
@@ -81,6 +82,11 @@ def create_subscription(user_id):
   ---
   tags: S
   parameters:
+    - name: user_id
+      in: path
+      type: string
+      required: true
+      description: The ID of the user
     - name: subscription_data
       in: body
       required: true
@@ -124,12 +130,14 @@ def create_subscription(user_id):
   
   request_data = request.get_json()
   subscription_creator = storage.get(User, user_id)
-  # print(type(subscription_creator))
+  print(subscription_creator)
   new_subscription = Subscription(subscription_creator, **request_data)
   # print(type(new_subscription))
   new_subscription.save()
+  send_welcome_email_task(new_subscription)
   subscription_response = new_subscription.make_subscription_response()
   current_app.logger.critical(f"Subscription {subscription_response['subscription_name']} has been created")
+  current_app.logger.critical(f"API STATUS {session['api_status']}")
   print(subscription_response)
   return make_response(jsonify(new_subscription.make_subscription_response()), 201)
 

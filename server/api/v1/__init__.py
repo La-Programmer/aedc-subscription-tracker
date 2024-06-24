@@ -8,15 +8,17 @@ from api.v1.views import app_views
 from flask_cors import CORS
 import logging
 from logging.config import dictConfig
-from celery.schedules import crontab
-from flask import Flask, make_response, jsonify
+# from celery.schedules import crontab
+from flask_session import Session
+from redis import Redis
+from flask import Flask, make_response, jsonify, session
 
-def create_app(test_config=None):
+def create_app(test_config=None) -> Flask:
   """Create and configure flask application"""
   dictConfig({
     'version': 1,
     'formatters': {'default': {
-        'format': '%(levelname)s in %(module)s: %(message)s',
+        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
     }},
     'handlers': {
        'wsgi': {
@@ -44,16 +46,25 @@ def create_app(test_config=None):
         broker_url="redis://localhost:6379/0",
         result_backend="redis://localhost:6379/0",
         task_ignore_result=True,
+        broker_connection_retry_on_startup=True,
+        beat_schedule={
+           'task-every-10-seconds' : {
+           "task": "api.v1.email_service.send_notification_email_task",
+           "schedule": 10
+        }
+      }
     ),
     SWAGGER=dict(
         title='AEDC Subscription Tracking Application',
         uiversion=3
     ),
-    JSONIFY_PRETTYPRINT_REGULAR=True
-    # SESSION_TYPE = 'redis'
+    JSONIFY_PRETTYPRINT_REGULAR=True,
+    SESSION_TYPE = 'redis',
+    SESSION_REDIS = Redis(host='localhost', port=6379)
   )
 
-  celery_app = celery_init_app(app)
+  Session(app)
+  celery_init_app(app)
   app.register_blueprint(app_views)
   Swagger(app)
   logger = logging.getLogger(__name__)
@@ -80,4 +91,3 @@ def create_app(test_config=None):
     return 'Hello, World!'
   
   return app
-  
