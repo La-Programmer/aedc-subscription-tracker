@@ -29,7 +29,7 @@ class DBStorage:
     PASSWORD=getenv("PASSWORD")
     HOST=getenv("HOST")
     DB=getenv("DB") 
-    print(f'{USER}, {PASSWORD}, {HOST}, {DB}')
+    # print(f'{USER}, {PASSWORD}, {HOST}, {DB}')
     self.__engine = create_engine(f'mysql+mysqldb://{USER}:{PASSWORD}@{HOST}/{DB}')
     
   def all(self, cls=None):
@@ -56,6 +56,13 @@ class DBStorage:
     result = self.__session.query(User).filter_by(email=email).first()
     print("Result", result)
     return(result)
+  
+  def get_all_subscriptions_for_specific_user(self, user_id):
+    """Gets all the subscriptions created by a user"""
+    subscriptions = self.__session.query(Subscription).filter_by(created_by=user_id).all()
+    result = [sub.make_subscription_response() for sub in subscriptions]
+    return result
+
 
   def get_users_associated_with_a_subscription(self, subscription_id):
     """Gets the users associated with a subscription"""

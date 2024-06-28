@@ -56,7 +56,8 @@ class Subscription(BaseModel, Base):
                       'start_date',
                       'expiry_date',
                       'users',
-                      'subscription_cost']
+                      'subscription_cost',
+                      'subscription_description']
     for key in subscription_dict.keys():
       if key in necessary_keys:
         result[key] = subscription_dict[key]

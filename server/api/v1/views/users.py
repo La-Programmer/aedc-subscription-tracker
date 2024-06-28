@@ -1,17 +1,31 @@
 #!/usr/bin/python3
 """ User API endpoints """
+import requests.adapters
 from models.user import User
 from models import storage
 import requests
 import json
+from redis import StrictRedis
+from datetime import timedelta
 from api.v1.views import app_views
-from flask import abort, jsonify, make_response, current_app, request, session
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt
+from flask import abort, jsonify, make_response, current_app, request
 
-# @check_user_authenticated(current_app)
+jwt_redis_blocklist = StrictRedis(
+     host="localhost", port=6379, db=0, decode_responses=True
+  )
+
 @app_views.route('/users', methods=['GET'], strict_slashes=False)
+@jwt_required()
 def get_users():
   """Retrieves the list of all users
   ---
+  parameters:
+    - name: Authorization
+      in: header
+      required: true
+      description: Bearer <access token>
+      type: string
   responses:
     200:
       description: All users gotten successfully
@@ -24,10 +38,16 @@ def get_users():
 
 @app_views.route('/users/<user_id>', methods=['GET'],
                  strict_slashes=False)
+@jwt_required()
 def get_user(user_id):
   """ Gets a user by ID
   ---
   parameters:
+    - name: Authorization
+      in: header
+      required: true
+      description: Bearer <access token>
+      type: string
     - name: user_id
       in: path
       type: string
@@ -46,10 +66,16 @@ def get_user(user_id):
 
 @app_views.route('/users/<user_id>', methods=['DELETE'],
                  strict_slashes=False)
+@jwt_required()
 def delete_user(user_id):
   """ Deletes a user object
   ---
   parameters:
+    - name: Authorization
+      in: header
+      required: true
+      description: Bearer <access token>
+      type: string
     - name: user_id
       in: path
       type: string
@@ -70,7 +96,7 @@ def delete_user(user_id):
   current_app.logger.critical(f"User {user_id} has been deleted")
   return make_response(jsonify({}), 204)
 
-@app_views.route('/users', methods=['POST'],
+@app_views.route('/users/login', methods=['POST'],
                  strict_slashes=False)
 def user_auth():
   """ Authenticates a user
@@ -112,7 +138,7 @@ def user_auth():
     )
     current_app.logger.critical("User successfully authenticated")
   except Exception as e:
-    current_app.logger.critical("AD service not available")
+    current_app.logger.critical(f"AD service not available due to error {e}")
     abort(404)
   response = response_from_ad_service.json()
   print(response)
@@ -131,8 +157,8 @@ def user_auth():
     if (user):
       user_response = user.make_user_response()
       current_app.logger.critical("Existing user has logged in")
-      session['user'] = user_response
-      return make_response(jsonify(user.make_user_response()), 200)
+      access_token = create_access_token(identity=user_response['id'])
+      return make_response(jsonify(user=user_response, token=access_token), 200)
     else:
       try:
         new_user = User(**user_object)
@@ -143,19 +169,50 @@ def user_auth():
           abort(err.response.status_code, description=err.response)
       finally:
         new_user.save()
-        user_response = user.make_user_response()
+        user_response = new_user.make_user_response()
         current_app.logger.critical("New user has been created and logged in")
-        session['user'] = user_response
-        return make_response(jsonify(user_response), 200)
+        access_token = create_access_token(identity=user_response['id'])
+        return make_response(jsonify(user=user_response, token=access_token), 200)
   else:
     abort(response['status_code'], description=response['msg'])
 
+@app_views.route('/users/logout', methods=['DELETE'], strict_slashes=False)
+@jwt_required()
+def logout():
+  """Logs out a user
+  ---
+  parameters:
+    - name: Authorization
+      in: header
+      required: true
+      description: Bearer <access token>
+      type: string
+  responses:
+    200:
+      description: User access revoked
+    500:
+      description: Internal server error
+  """
+  jti = get_jwt()["jti"]
+  try:
+    jwt_redis_blocklist.set(jti, "", ex=timedelta(hours=1))
+  except Exception as e:
+    current_app.logger.critical(f"Logout failed due to exception {e}")
+    abort(500, description="Internal server error")
+  return jsonify(msg="Access token revoked")
+
 @app_views.route('/users/<user_id>', methods=['PUT'],
                  strict_slashes=False)
-def update_user(user_id):
+@jwt_required()
+def update_user(user_id=None):
   """ Updates a user
   ---
   parameters:
+      - name: Authorization
+        in: header
+        required: true
+        description: Bearer <access token>
+        type: string
       - name: user_id
         in: path
         type: string
@@ -197,11 +254,11 @@ def update_user(user_id):
     400:
       description: Invalid JSON or missing parameters
   """
+  if not request.get_json():
+    abort(400, description="Invalid JSON") 
   user = storage.get(User, user_id)
   if not user:
     abort(404)
-  if not request.get_json():
-    abort(400, description="Invalid JSON")
   
   ignore = ['id', 'email', 'created_at', 'updated_at']
 
