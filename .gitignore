@@ -1,6 +1,7 @@
 venv/
 tests/
 *cpython*
+server/setup_mysql_dev.sql
 server/*__pycache__
 server/app.log
 server/dump.rdb
