@@ -24,13 +24,17 @@ class DBStorage:
 
   def __init__(self):
     """Instantiate a DBStorage object"""
-    USER=os.environ.get("USER")
-    PASSWORD=os.environ.get("PASSWORD")
-    HOST=os.environ.get("HOST")
-    DB=os.environ.get("DB") 
+    # USER=os.environ.get("USER")
+    # PASSWORD=os.environ.get("PASSWORD")
+    # HOST=os.environ.get("HOST")
+    # DB=os.environ.get("DB") 
     # print(f'{USER}, {PASSWORD}, {HOST}, {DB}')
-    self.__engine = create_engine(f'mysql+mysqldb://{USER}:{PASSWORD}@{HOST}/{DB}')
-    
+    self.__engine = create_engine(
+      # f'mysql+mysqldb://{USER}:{PASSWORD}@{HOST}/{DB}')
+    f"mysql+pymysql://{os.environ('USER')}:{os.environ('PASSWORD')}"
+    f"@{os.environ('HOST')}/{os.environ('DB')}"
+    )
+
   def all(self, cls=None):
     """ Gets all objects of a specific class, or all classes """
     new_dict = {}
