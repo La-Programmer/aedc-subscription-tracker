@@ -9,9 +9,8 @@ from models.base_model import Base, BaseModel
 from models.user import User
 from models.subscription import Subscription
 from sqlalchemy.orm import scoped_session, sessionmaker
-from os import getenv
 from dotenv import load_dotenv
-
+import os
 
 # Load environment variables
 load_dotenv()
@@ -25,10 +24,10 @@ class DBStorage:
 
   def __init__(self):
     """Instantiate a DBStorage object"""
-    USER=getenv("USER")
-    PASSWORD=getenv("PASSWORD")
-    HOST=getenv("HOST")
-    DB=getenv("DB") 
+    USER=os.environ.get("USER")
+    PASSWORD=os.environ.get("PASSWORD")
+    HOST=os.environ.get("HOST")
+    DB=os.environ.get("DB") 
     # print(f'{USER}, {PASSWORD}, {HOST}, {DB}')
     self.__engine = create_engine(f'mysql+mysqlconnector://{USER}:{PASSWORD}@{HOST}/{DB}')
     
