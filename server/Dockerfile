@@ -15,11 +15,12 @@ RUN apk update \
     mariadb-connector-c-dev \
     linux-headers
 
-COPY . /srv
 WORKDIR /srv
 
 # Install Python dependencies
 RUN pip install -r requirements.txt 
+
+COPY . /srv
 
 # Expose the port the app runs on
 EXPOSE 8000
