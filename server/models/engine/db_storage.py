@@ -31,8 +31,7 @@ class DBStorage:
     # print(f'{USER}, {PASSWORD}, {HOST}, {DB}')
     self.__engine = create_engine(
       # f'mysql+mysqldb://{USER}:{PASSWORD}@{HOST}/{DB}')
-    f"mysql+pymysql://{os.environ('USER')}:{os.environ('PASSWORD')}"
-    f"@{os.environ('HOST')}/{os.environ('DB')}"
+      f"mysql+pymysql://{os.environ.get('USER')}:{os.environ.get('PASSWORD')}"f"@{os.environ.get('HOST')}/{os.environ.get('DB')}"
     )
 
   def all(self, cls=None):
