@@ -30,7 +30,7 @@ class DBStorage:
     HOST=getenv("HOST")
     DB=getenv("DB") 
     # print(f'{USER}, {PASSWORD}, {HOST}, {DB}')
-    self.__engine = create_engine(f'mysql+mysqldb://{USER}:{PASSWORD}@{HOST}/{DB}')
+    self.__engine = create_engine(f'mysql+mysqlconnector://{USER}:{PASSWORD}@{HOST}/{DB}')
     
   def all(self, cls=None):
     """ Gets all objects of a specific class, or all classes """

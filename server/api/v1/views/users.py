@@ -7,6 +7,7 @@ import requests
 import json
 from redis import StrictRedis
 from datetime import timedelta
+from flask_cors import cross_origin
 from api.v1.views import app_views
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt
 from flask import abort, jsonify, make_response, current_app, request
@@ -98,6 +99,7 @@ def delete_user(user_id):
 
 @app_views.route('/users/login', methods=['POST'],
                  strict_slashes=False)
+# @cross_origin()
 def user_auth():
   """ Authenticates a user
   ---
@@ -172,7 +174,8 @@ def user_auth():
         user_response = new_user.make_user_response()
         current_app.logger.critical("New user has been created and logged in")
         access_token = create_access_token(identity=user_response['id'])
-        return make_response(jsonify(user=user_response, token=access_token), 200)
+        resp = make_response(jsonify(user=user_response, token=access_token), 200)
+        return resp
   else:
     abort(response['status_code'], description=response['msg'])
 

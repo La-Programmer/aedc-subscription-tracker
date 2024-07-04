@@ -63,7 +63,8 @@ def create_app(test_config=None) -> Flask:
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1),
     # JWT_COOKIE_SECURE = False,
     # JWT_TOKEN_LOCATION = ["cookies"],
-    JWT_SECRET_KEY = getenv('SECRET_KEY')
+    JWT_SECRET_KEY = getenv('SECRET_KEY'),
+    CORS_HEADERS = 'Content-Type'
     # JWT_TOKEN_EXPIRES = timedelta(hours=1)
   )
 
@@ -71,7 +72,7 @@ def create_app(test_config=None) -> Flask:
   app.register_blueprint(app_views)
   Swagger(app)
   logger = logging.getLogger(__name__)
-  cors = CORS(app, supports_credentials=True)#, resources={r"/*": {"origins": "*"}})
+  cors = CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://127.0.0.1:5173"}})
   jwt = JWTManager(app)
 
   jwt_redis_blocklist = StrictRedis(
