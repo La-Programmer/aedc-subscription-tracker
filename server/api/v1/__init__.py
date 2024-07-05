@@ -72,7 +72,7 @@ def create_app(test_config=None) -> Flask:
   app.register_blueprint(app_views)
   Swagger(app)
   logger = logging.getLogger(__name__)
-  cors = CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://127.0.0.1:5173"}})
+  cors = CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
   jwt = JWTManager(app)
 
   jwt_redis_blocklist = StrictRedis(
