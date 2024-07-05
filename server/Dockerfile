@@ -21,8 +21,10 @@ WORKDIR /srv
 # Install Python dependencies
 RUN pip install -r requirements.txt 
 
-# Expose the port the app runs on
-EXPOSE 8000
+# # Expose the port the app runs on
+# EXPOSE 8000
 
 # Define the entrypoint command to fun the flask app
-CMD ["python3", "-m", "api.v1.app"]
+# CMD ["python3", "-m", "api.v1.app"]
+CMD ["flask", "--app", "api.v1", "run"]
+

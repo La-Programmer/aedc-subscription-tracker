@@ -1,5 +1,3 @@
-version: '2'
-
 services:
     # flask server
     flask-server:
@@ -7,10 +5,13 @@ services:
         build:
             context: .
             dockerfile: ./Dockerfile
-        expose:
-            - 5000
+        ports:
+          - 8182:5000
         env_file:
           - ./.env
+        networks:
+          - app-network
+
 
     # celery worker
     celery-worker:
@@ -23,6 +24,8 @@ services:
         depends_on:
             - flask-server
             - redis
+        networks:
+          - app-network
 
     # redis server
     redis:
@@ -30,3 +33,10 @@ services:
         image: redis:7.0.5-alpine 
         expose:
             - 6379
+        networks:
+          - app-network
+
+          
+networks:
+  app-network:
+    driver: bridge
