@@ -132,16 +132,21 @@ def user_auth():
     abort(400, description="Missing password")
 
   request_data = request.get_json()
-
-  try:
-    response_from_ad_service = requests.post(
-      'https://adservice.abujaelectricity.com/auth/detail',
-      request_data
-    )
-    current_app.logger.critical("User successfully authenticated")
-  except Exception as e:
-    current_app.logger.critical(f"AD service not available due to error {e}")
-    abort(404)
+  num = 0
+  while num <= 5:  
+    try:
+      response_from_ad_service = requests.post(
+        'https://adservice.abujaelectricity.com/auth/detail',
+        json=request_data,
+      )
+      current_app.logger.critical("User successfully authenticated")
+      break
+    except ConnectionError as e:
+      current_app.logger.critical(str(e))
+      num += 1
+    except Exception as e:
+      current_app.logger.critical(str(e))
+      num += 1
   response = response_from_ad_service.json()
   print(response)
   if (response['status_code'] == '404'):
