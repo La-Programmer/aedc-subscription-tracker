@@ -29,10 +29,7 @@ class DBStorage:
     HOST=os.environ.get("HOST")
     DB=os.environ.get("DB") 
     # print(f'{USER}, {PASSWORD}, {HOST}, {DB}')
-    try:
-      self.__engine = create_engine(f"mysql+mysqldb://{USER}:{PASSWORD}@{HOST}:3306/{DB}")
-    except Exception as e:
-      print(e) 
+    self.__engine = create_engine(f"mysql+mysqldb://{USER}:{PASSWORD}@{HOST}:3306/{DB}")    
 
   def all(self, cls=None):
     """ Gets all objects of a specific class, or all classes """
