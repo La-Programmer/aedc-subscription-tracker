@@ -22,7 +22,7 @@ class DBStorage:
   __engine = None
   __session = None
 
-  def _init_(self):
+  def __init__(self):
     """Instantiate a DBStorage object"""
     USER=os.environ.get("USER")
     PASSWORD=os.environ.get("PASSWORD")
