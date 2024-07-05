@@ -25,4 +25,6 @@ RUN pip install -r requirements.txt
 EXPOSE 8000
 
 # Define the entrypoint command to fun the flask app
-CMD ["python3", "-m", "api.v1.app"]
+# CMD ["python3", "-m", "api.v1.app"]
+CMD ["flask", "--app", "api.v1", "run"]
+
