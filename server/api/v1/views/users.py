@@ -13,7 +13,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt
 from flask import abort, jsonify, make_response, current_app, request
 
 jwt_redis_blocklist = StrictRedis(
-     host="localhost", port=6379, db=0, decode_responses=True
+     host="redis", port=6379, db=0, decode_responses=True
   )
 
 @app_views.route('/users', methods=['GET'], strict_slashes=False)
