@@ -34,7 +34,7 @@ def get_users():
   all_users = storage.all(User).values()
   list_users = []
   for user in all_users:
-    list_users.append(user.to_dict())
+    list_users.append(user.make_user_response())
   return (jsonify(list_users)), 200
 
 @app_views.route('/users/<user_id>', methods=['GET'],

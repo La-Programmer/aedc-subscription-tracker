@@ -36,9 +36,8 @@ class Subscription(BaseModel, Base):
     "Iinitializes user"
     if kwargs['users']:
       kwargs['created_by'] = user.id
-      stakeholders_array_string = kwargs['users'].split(" ")
       stakeholders_array = []
-      for user in stakeholders_array_string:
+      for user in kwargs['users']:
         stakeholder = models.storage.get_user_by_email(user)
         stakeholders_array.append(stakeholder)
       kwargs['users'] = stakeholders_array
@@ -51,7 +50,8 @@ class Subscription(BaseModel, Base):
     users = models.storage.get_users_associated_with_a_subscription(self.id)
     # print("Users", users)
     result = {}
-    necessary_keys = ['subscription_name',
+    necessary_keys = ['id',
+                      'subscription_name',
                       'subscription_status',
                       'start_date',
                       'expiry_date',
