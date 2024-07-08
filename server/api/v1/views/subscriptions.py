@@ -7,6 +7,7 @@ from api.v1.views import app_views
 from ..email_service import send_welcome_email_task
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask import abort, jsonify, make_response, current_app, request, session
+from flask_cors import cross_origin
 from datetime import datetime
 
 @app_views.route('/subscriptions', methods=['GET'],
@@ -90,7 +91,7 @@ def get_user_subscriptions():
     abort(404)
   return make_response(jsonify(subscriptions), 200)
 
-@app_views.route('/subscription/<subscription_id>', methods=['DELETE'],
+@app_views.route('/subscriptions/<subscription_id>', methods=['DELETE'],
                  strict_slashes=False)
 @jwt_required()
 def delete_subscription(subscription_id):
@@ -182,17 +183,17 @@ def create_subscription():
   subscription_creator = storage.get(User, user_id)
   print(subscription_creator)
   new_subscription = Subscription(subscription_creator, **request_data)
-  # print(type(new_subscription))
   new_subscription.save()
   send_welcome_email_task(new_subscription)
   subscription_response = new_subscription.make_subscription_response()
   current_app.logger.critical(f"Subscription {subscription_response['subscription_name']} has been created")
   print(subscription_response)
-  return make_response(jsonify(new_subscription.make_subscription_response()), 201)
+  return make_response(jsonify(subscription_response), 201)
 
 @app_views.route('/subscriptions/<subscription_id>', methods=['PUT'],
                  strict_slashes=False)
 @jwt_required()
+@cross_origin()
 def update_subscription(subscription_id):
   """ Updates a subscription object
   ---
@@ -238,7 +239,7 @@ def update_subscription(subscription_id):
   user_id = subscription.created_by
   if (user_id != get_jwt_identity()):
     current_app.logger.critical(f"User {user_id} attempted to illegally edit subscription {subscription_id}")
-    abort(400, description="User not authorized to make request")
+    abort(405, description="User not authorized to make request")
   if not subscription:
     abort(404)
   if not request.get_json():
@@ -250,8 +251,13 @@ def update_subscription(subscription_id):
   for key, value in data.items():
     if key not in ignore:
       if key in data.keys():
-        setattr(subscription, key, value)
+        try:
+          setattr(subscription, key, value)
+        except Exception as e:
+          current_app.logger.critical(f"Updating subscription failed")
+          current_app.logger.critical(f"Exception: {e}")
   subscription.save()
   subscription_response = subscription.make_subscription_response()
   current_app.logger.critical(f"Subscription {subscription_response['subscription_name']} has been updated")
-  return make_response(jsonify(subscription_response), 200)
+  response = make_response(jsonify(subscription_response), 200)
+  return response
