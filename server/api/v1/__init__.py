@@ -44,8 +44,8 @@ def create_app(test_config=None) -> Flask:
   app.config.from_mapping(
     SECRET_KEY=getenv('SECRET_KEY'),
     CELERY=dict(
-        broker_url="redis://localhost:6379/0",
-        result_backend="redis://localhost:6379/0",
+        broker_url="redis://redis:6379/0",
+        result_backend="redis://redis:6379/0",
         task_ignore_result=True,
         broker_connection_retry_on_startup=True,
         beat_schedule={
@@ -100,7 +100,7 @@ def create_app(test_config=None) -> Flask:
       """
       return make_response(jsonify({'error': "Not found"}), 404)
   
-  @app.route('/hello')
+  @app.route('/')
   def hello():
     logger.critical("Application is up and running")
     return 'Hello, World!'
