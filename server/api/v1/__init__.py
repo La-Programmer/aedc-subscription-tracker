@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-import os
 from os import getenv
 from ..celery_config import celery_init_app
 from flasgger import Swagger
@@ -7,13 +6,12 @@ from models import storage
 from api.v1.views import app_views
 from flask_cors import CORS
 import logging
-import requests
 from logging.config import dictConfig
-from flask_session import Session
 from redis import StrictRedis
 from datetime import timedelta
 from flask_jwt_extended import JWTManager
-from flask import Flask, make_response, jsonify, session
+from flask import Flask, make_response, jsonify
+from flask_mail import Mail
 
 def create_app(test_config=None) -> Flask:
   """Create and configure flask application"""
@@ -40,18 +38,18 @@ def create_app(test_config=None) -> Flask:
         'propagate': True
     }
 })
-  app = Flask(__name__, instance_relative_config=True)
+  app = Flask(__name__)
   app.config.from_mapping(
     SECRET_KEY=getenv('SECRET_KEY'),
     CELERY=dict(
         broker_url="redis://localhost:6379/0",
         result_backend="redis://localhost:6379/0",
+        broker_connection_retry_on_startup = True,
         task_ignore_result=True,
-        broker_connection_retry_on_startup=True,
         beat_schedule={
            'task-every-10-seconds' : {
            "task": "api.v1.email_service.send_notification_email_task",
-           "schedule": timedelta(days=1)
+           "schedule": 10#timedelta(days=1)
         }
       }
     ),
@@ -67,7 +65,16 @@ def create_app(test_config=None) -> Flask:
     CORS_HEADERS = 'Content-Type'
     # JWT_TOKEN_EXPIRES = timedelta(hours=1)
   )
+  app.config['MAIL_SERVER']='sandbox.smtp.mailtrap.io'
+  app.config['MAIL_PORT'] = 2525
+  app.config['MAIL_USERNAME'] = '0600ccec6a5dde'
+  app.config['MAIL_PASSWORD'] = '0d97a6424e6d40'
+  app.config['MAIL_USE_TLS'] = True
+  app.config['MAIL_USE_SSL'] = False
+  app.config.from_prefixed_env()
 
+
+  Mail(app)
   celery_init_app(app)
   app.register_blueprint(app_views)
   Swagger(app)
@@ -100,9 +107,8 @@ def create_app(test_config=None) -> Flask:
       """
       return make_response(jsonify({'error': "Not found"}), 404)
   
-  @app.route('/hello')
+  @app.route('/')
   def hello():
     logger.critical("Application is up and running")
-    return 'Hello, World!'
   
   return app

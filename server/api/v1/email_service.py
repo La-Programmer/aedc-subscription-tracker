@@ -2,7 +2,10 @@
 from celery import shared_task
 from models import storage
 from datetime import datetime, timedelta
+from flask_mail import Message
+# from api.v1 import create_app
 
+# mail = Mail(create_app())
 @shared_task(ignore_result=False)
 def send_notification_email_task():
   """ Task to handle email sending """
@@ -61,7 +64,17 @@ def check_last_notification_date(last_notification_date):
 def send_email(subscription):
   """Send reminder email"""
   print("Email sent to Users")
-  setattr(subscription, "last_notification", datetime.utcnow())
+  message = Message(
+    subject=f"Email notification for {subscription.subscription_name}",
+    recipients=["justinebedi70@gmail.com"],
+    sender="justinoghenekomeebedi@gmail.com"
+  )
+
+  message.body = f"This is to notify you that your subscription {subscription.subcription_name} will expire on {subscription.expiry_date}"
+  mail.send(message)
+
+  print("Message sent")
+  return "Message sent"
 
 def send_first_email(subscription):
   """Send welcome email"""

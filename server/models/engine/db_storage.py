@@ -4,7 +4,7 @@ Contains the class DBStorage
 """
 
 import models
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, update
 from models.base_model import Base, BaseModel
 from models.user import User
 from models.subscription import Subscription
@@ -78,6 +78,25 @@ class DBStorage:
     # print("Got here")
     # print(obj)
     self.__session.add(obj)
+
+  def get_users_by_email_array(self, array):
+    """Take an array of emails and replace them with their user instances"""
+    result_array = [self.get_user_by_email(user) for user in array]
+    return result_array
+
+  
+  def update(self, obj, kwargs):
+    """Updates a record in DB"""
+    print("Update begun")
+    subscription = self.__session.query(Subscription).filter_by(id=obj.id).first()
+    print(subscription)
+    for key, value in kwargs.items():
+      if key == 'users':
+        value = self.get_users_by_email_array(value)
+      setattr(subscription, key, value)
+    print(subscription)
+    print("Update ended")
+    
 
   def save(self):
     """Commits the current changes to the DB"""
