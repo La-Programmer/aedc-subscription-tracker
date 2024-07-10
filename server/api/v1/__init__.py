@@ -42,9 +42,8 @@ def create_app(test_config=None) -> Flask:
   app.config.from_mapping(
     SECRET_KEY=getenv('SECRET_KEY'),
     CELERY=dict(
-        broker_url="redis://localhost:6379/0",
-        result_backend="redis://localhost:6379/0",
-        broker_connection_retry_on_startup = True,
+        broker_url="redis://redis:6379/0",
+        result_backend="redis://redis:6379/0",
         task_ignore_result=True,
         beat_schedule={
            'task-every-10-seconds' : {
@@ -83,7 +82,7 @@ def create_app(test_config=None) -> Flask:
   jwt = JWTManager(app)
 
   jwt_redis_blocklist = StrictRedis(
-     host="localhost", port=6379, db=0, decode_responses=True
+     host="redis", port=6379, db=0, decode_responses=True
   )
 
   @jwt.token_in_blocklist_loader

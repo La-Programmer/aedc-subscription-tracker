@@ -43,8 +43,7 @@ def get_user_subscriptions():
         abort(404)
     return make_response(jsonify(subscriptions), 200)
 
-@app_views.route('/subscriptions/<subscription_id>', methods=['DELETE'],
-        strict_slashes=False)
+@app_views.route('/subscriptions/<subscription_id>', methods=['DELETE'], strict_slashes=False)
 @jwt_required()
 def delete_subscription(subscription_id):
     subscription = storage.get(Subscription, subscription_id)

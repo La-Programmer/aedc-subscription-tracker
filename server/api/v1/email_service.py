@@ -71,7 +71,7 @@ def send_email(subscription):
   )
 
   message.body = f"This is to notify you that your subscription {subscription.subcription_name} will expire on {subscription.expiry_date}"
-  mail.send(message)
+  # mail.send(message)
 
   print("Message sent")
   return "Message sent"

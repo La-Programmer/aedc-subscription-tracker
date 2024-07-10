@@ -7,18 +7,29 @@ import requests
 import json
 from redis import StrictRedis
 from datetime import timedelta
-from flask_cors import cross_origin
 from api.v1.views import app_views
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt
 from flask import abort, jsonify, make_response, current_app, request
 
 jwt_redis_blocklist = StrictRedis(
-        host="localhost", port=6379, db=0, decode_responses=True
-        )
+     host="redis", port=6379, db=0, decode_responses=True
+  )
 
 @app_views.route('/users', methods=['GET'], strict_slashes=False)
 @jwt_required()
 def get_users():
+    """Retrieves the list of all users
+  ---
+  parameters:
+    - name: Authorization
+      in: header
+      required: true
+      description: Bearer <access token>
+      type: string
+  responses:
+    200:
+      description: All users gotten successfully
+    """
     all_users = storage.all(User).values()
     list_users = []
     for user in all_users:
