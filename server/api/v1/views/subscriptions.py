@@ -4,14 +4,12 @@ from models.subscription import Subscription
 from models.user import User
 from models import storage
 from api.v1.views import app_views
-from ..email_service import send_welcome_email_task
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask import abort, jsonify, make_response, current_app, request, session
 from flask_cors import cross_origin
 from datetime import datetime
 
-@app_views.route('/subscriptions', methods=['GET'],
-        strict_slashes=False)
+@app_views.route('/subscriptions', methods=['GET'], strict_slashes=False)
 @jwt_required()
 def get_subscriptions():
     print("WE ARE RUNNING")
@@ -77,7 +75,7 @@ def create_subscription():
     print(subscription_creator)
     new_subscription = Subscription(subscription_creator, **request_data)
     new_subscription.save()
-    send_welcome_email_task(new_subscription)
+    # send_welcome_email_task(new_subscription)
     subscription_response = new_subscription.make_api_response()
     current_app.logger.critical(f"Subscription {subscription_response['subscription_name']} has been created")
     print(subscription_response)
@@ -128,7 +126,7 @@ def update_subscription(subscription_id):
             400:
                 description: Invalid JSON or missing parameters
     """
-    subscription = storage.get(Subscription, subscription_id)
+    subscription: Subscription = storage.get(Subscription, subscription_id)
     user_id = subscription.created_by
     if (user_id != get_jwt_identity()):
         current_app.logger.critical(f"User {user_id} attempted to illegally edit subscription {subscription_id}")
@@ -139,6 +137,7 @@ def update_subscription(subscription_id):
         abort(400, description="Invalid JSON")
     data = request.get_json()
     try:
+        print(data)
         subscription.update(data)
     except Exception as e:
         current_app.logger.critical(f"Updating subscription failed")

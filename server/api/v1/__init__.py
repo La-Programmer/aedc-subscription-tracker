@@ -1,18 +1,27 @@
 #!/usr/bin/python3
-from os import getenv
+import os
+import json
+from dotenv import load_dotenv
 from ..celery_config import celery_init_app
 from flasgger import Swagger
 from models import storage
+from models.subscription import Subscription
 from api.v1.views import app_views
 from flask_cors import CORS
 import logging
 from logging.config import dictConfig
 from redis import StrictRedis
-from datetime import timedelta
+from datetime import timedelta, datetime
 from flask_jwt_extended import JWTManager
 from flask import Flask, make_response, jsonify
-from flask_mail import Mail
+from flask_mail import Mail, Message
+from celery.schedules import crontab
+from celery import shared_task
 
+
+load_dotenv()
+REDIS = os.environ.get('REDIS_LOCAL')
+SECRET = os.environ.get('SECRET_KEY')
 def create_app(test_config=None) -> Flask:
   """Create and configure flask application"""
   dictConfig({
@@ -39,16 +48,24 @@ def create_app(test_config=None) -> Flask:
     }
 })
   app = Flask(__name__)
+  app.config['MAIL_SERVER']='sandbox.smtp.mailtrap.io'
+  app.config['MAIL_PORT'] = 2525
+  app.config['MAIL_USERNAME'] = '0600ccec6a5dde'
+  app.config['MAIL_PASSWORD'] = '0d97a6424e6d40'
+  app.config['MAIL_USE_TLS'] = True
+  app.config['MAIL_USE_SSL'] = False
+  app.config.from_prefixed_env()
   app.config.from_mapping(
-    SECRET_KEY=getenv('SECRET_KEY'),
+    SECRET_KEY=SECRET,
     CELERY=dict(
-        broker_url="redis://redis:6379/0",
-        result_backend="redis://redis:6379/0",
+        broker_url=REDIS,
+        result_backend=REDIS,
         task_ignore_result=True,
+        broker_connection_retry_on_startup=True,
         beat_schedule={
            'task-every-10-seconds' : {
-           "task": "api.v1.email_service.send_notification_email_task",
-           "schedule": 10#timedelta(days=1)
+           "task": "api.v1.send_notification_email_task",
+           "schedule": 20,#timedelta(days=1)
         }
       }
     ),
@@ -60,20 +77,10 @@ def create_app(test_config=None) -> Flask:
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1),
     # JWT_COOKIE_SECURE = False,
     # JWT_TOKEN_LOCATION = ["cookies"],
-    JWT_SECRET_KEY = getenv('SECRET_KEY'),
+    JWT_SECRET_KEY = SECRET,
     CORS_HEADERS = 'Content-Type'
     # JWT_TOKEN_EXPIRES = timedelta(hours=1)
   )
-  app.config['MAIL_SERVER']='sandbox.smtp.mailtrap.io'
-  app.config['MAIL_PORT'] = 2525
-  app.config['MAIL_USERNAME'] = '0600ccec6a5dde'
-  app.config['MAIL_PASSWORD'] = '0d97a6424e6d40'
-  app.config['MAIL_USE_TLS'] = True
-  app.config['MAIL_USE_SSL'] = False
-  app.config.from_prefixed_env()
-
-
-  Mail(app)
   celery_init_app(app)
   app.register_blueprint(app_views)
   Swagger(app)
@@ -82,7 +89,7 @@ def create_app(test_config=None) -> Flask:
   jwt = JWTManager(app)
 
   jwt_redis_blocklist = StrictRedis(
-     host="redis", port=6379, db=0, decode_responses=True
+     host="localhost", port=6379, db=0, decode_responses=True
   )
 
   @jwt.token_in_blocklist_loader
@@ -109,5 +116,94 @@ def create_app(test_config=None) -> Flask:
   @app.route('/')
   def hello():
     logger.critical("Application is up and running")
+
+  
+  @shared_task(ignore_result=False)
+  def send_notification_email_task():
+    """ Task to handle email sending """
+    # print("Background job send_notification_email_task started")
+    subscriptions: 'list[Subscription]' = storage.all('Subscription')
+    for subscription in subscriptions.values():
+      # print(type(subscription.expiry_date))
+      days_remaining = check_time_to_expiry_date(subscription.expiry_date)
+      if days_remaining > 90:
+        if check_last_notification_date(subscription) == 0 or check_last_notification_date(subscription) >= 30:
+          print("GOT HERE")
+          send_email(subscription.to_dict(), make_email_message(subscription.subscription_name, days_remaining))
+      elif days_remaining < 90 and days_remaining > 60:
+        if check_last_notification_date(subscription) == 0 or check_last_notification_date(subscription) >= 15:
+          print("GOT HERE")
+          send_email(subscription.to_dict(), make_email_message(subscription.subscription_name, days_remaining))
+      elif days_remaining < 60 and days_remaining > 30:
+        if check_last_notification_date(subscription) == 0 or check_last_notification_date(subscription) >= 7:
+          print("GOT HERE")
+          send_email(subscription.to_dict(), make_email_message(subscription.subscription_name, days_remaining))
+      elif days_remaining < 30:
+        if check_last_notification_date(subscription) == 0 or check_last_notification_date(subscription) >= 1:
+          print("GOT HERE")
+          send_email(subscription.to_dict(), make_email_message(subscription.subscription_name, days_remaining))
+      elif days_remaining <= 0:
+        print("GOT HERE")
+        send_email(subscription.to_dict(), make_email_message(subscription.subscription_name, days_remaining))
+        subscription.upate(subscription_status=False)
+
+  def make_email_message(name, days):
+    """Returns the subscription string"""
+    return f"This is to notify you that your subscription {name} will expire in {days} days."
+
+  @shared_task(ignore_result=False)
+  def send_welcome_email_task(subscription):
+    """Task to handle sending welcome email"""
+    print("Background job send_welcome_email_task started")
+    send_first_email(subscription)
+
+  def check_time_to_expiry_date(expiry_date):
+    """ Function to check how long to the expiry date
+    of a subscription
+    """
+    # expiry_date = datetime.strptime(expiry_date, '%Y-%m-%d %H:%M:%S')
+    days_remaining = expiry_date - datetime.now()
+    return days_remaining.days
+
+  def check_last_notification_date(subscription: Subscription):
+    """ Function to check the last notification date of a subscription"""
+    last_notification_date = subscription.last_notification
+    if not last_notification_date:
+      return 0
+    days_passed = datetime.utcnow() - last_notification_date
+    return days_passed.days
+
+  def send_email(subscription: Subscription, message_body=None):
+    """Send reminder email"""
+    # print("Send email function has begun")
+    name = subscription['subscription_name']
+    users = storage.get_users_associated_with_a_subscription(subscription['id'])
+    print(f"Email sending to users of subscription {name}")
+    logger.critical(f"Email sending to users of subscription {name}")
+    mail = Mail(app)
+    # print('GOT HERE 1')
+    message = Message(
+      subject=f"Email notification for {name}",
+      recipients=users,
+      sender="justinoghenekomeebedi@gmail.com"
+    )
+    # print('GOT HERE 2')
+    message.body = message_body
+    try:
+      mail.send(message)
+    except Exception as e:
+      print(str(e))
+    try:
+      subscription.update(last_notifcation=datetime.now())
+    except Exception as e:
+      print(str(e))
+    print("Emails successfully sent")
+    logger.critical("Emails successfully sent")
+
+
+  def send_first_email(subscription):
+    """Send welcome email"""
+    print("Welcome email sent to users")
   
   return app
+

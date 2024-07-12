@@ -77,7 +77,7 @@ class BaseModel:
 
 
     def update(self, kwargs):
-        """Updates a specific subscription instance"""
+        """Updates a specific object instance"""
         models.storage.update(self, kwargs)
         models.storage.save()
 
