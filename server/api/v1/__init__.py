@@ -124,28 +124,29 @@ def create_app(test_config=None) -> Flask:
     # print("Background job send_notification_email_task started")
     subscriptions: 'list[Subscription]' = storage.all('Subscription')
     for subscription in subscriptions.values():
+      subscription: Subscription
       # print(type(subscription.expiry_date))
       days_remaining = check_time_to_expiry_date(subscription.expiry_date)
       if days_remaining > 90:
         if check_last_notification_date(subscription) == 0 or check_last_notification_date(subscription) >= 30:
           print("GOT HERE")
-          send_email(subscription.to_dict(), make_email_message(subscription.subscription_name, days_remaining))
+          send_email(subscription, make_email_message(subscription.subscription_name, days_remaining)).delay()
       elif days_remaining < 90 and days_remaining > 60:
         if check_last_notification_date(subscription) == 0 or check_last_notification_date(subscription) >= 15:
           print("GOT HERE")
-          send_email(subscription.to_dict(), make_email_message(subscription.subscription_name, days_remaining))
+          send_email(subscription, make_email_message(subscription.subscription_name, days_remaining)).delay()
       elif days_remaining < 60 and days_remaining > 30:
         if check_last_notification_date(subscription) == 0 or check_last_notification_date(subscription) >= 7:
           print("GOT HERE")
-          send_email(subscription.to_dict(), make_email_message(subscription.subscription_name, days_remaining))
+          send_email(subscription, make_email_message(subscription.subscription_name, days_remaining)).delay()
       elif days_remaining < 30:
         if check_last_notification_date(subscription) == 0 or check_last_notification_date(subscription) >= 1:
           print("GOT HERE")
-          send_email(subscription.to_dict(), make_email_message(subscription.subscription_name, days_remaining))
+          send_email(subscription, make_email_message(subscription.subscription_name, days_remaining)).delay()
       elif days_remaining <= 0:
         print("GOT HERE")
-        send_email(subscription.to_dict(), make_email_message(subscription.subscription_name, days_remaining))
-        subscription.upate(subscription_status=False)
+        send_email(subscription, make_email_message(subscription.subscription_name, days_remaining)).delay()
+        subscription.update(subscription_status=False)
 
   def make_email_message(name, days):
     """Returns the subscription string"""
@@ -173,11 +174,12 @@ def create_app(test_config=None) -> Flask:
     days_passed = datetime.utcnow() - last_notification_date
     return days_passed.days
 
+  @shared_task(ignore_result=False)
   def send_email(subscription: Subscription, message_body=None):
     """Send reminder email"""
     # print("Send email function has begun")
-    name = subscription['subscription_name']
-    users = storage.get_users_associated_with_a_subscription(subscription['id'])
+    name = subscription.subscription_name
+    users = storage.get_users_associated_with_a_subscription(subscription.id)
     print(f"Email sending to users of subscription {name}")
     logger.critical(f"Email sending to users of subscription {name}")
     mail = Mail(app)
@@ -191,14 +193,19 @@ def create_app(test_config=None) -> Flask:
     message.body = message_body
     try:
       mail.send(message)
+      logger.critical("Emails successfully sent")
     except Exception as e:
-      print(str(e))
+      logger.critical(str(e))
     try:
-      subscription.update(last_notifcation=datetime.now())
+      print("Subscription object to update", subscription)
+      logger.critical("ABOUT TO UPDATE SUBSCRIPTION OBJECT")
+      subscription.update({'last_notification': datetime.now()})
+      # subscription.save()
+      logger.critical("SUBSCRIPTION UPDATED SUCCESSFULLY")
+      # updated_subscription = storage.get(Subscription, subscription['id'])
+      print("Updated subscription object", subscription)
     except Exception as e:
-      print(str(e))
-    print("Emails successfully sent")
-    logger.critical("Emails successfully sent")
+      logger.critical(str(e))
 
 
   def send_first_email(subscription):
