@@ -10,6 +10,7 @@ from api.v1.views import app_views
 from flask_cors import CORS
 import logging
 from logging.config import dictConfig
+import requests
 from redis import StrictRedis
 from datetime import timedelta, datetime
 from flask_jwt_extended import JWTManager
@@ -177,35 +178,71 @@ def create_app(test_config=None) -> Flask:
   @shared_task(ignore_result=False)
   def send_email(subscription: Subscription, message_body=None):
     """Send reminder email"""
-    # print("Send email function has begun")
     name = subscription.subscription_name
     users = storage.get_users_associated_with_a_subscription(subscription.id)
-    print(f"Email sending to users of subscription {name}")
-    logger.critical(f"Email sending to users of subscription {name}")
-    mail = Mail(app)
-    # print('GOT HERE 1')
-    message = Message(
-      subject=f"Email notification for {name}",
-      recipients=users,
-      sender="justinoghenekomeebedi@gmail.com"
-    )
-    # print('GOT HERE 2')
-    message.body = message_body
-    try:
-      mail.send(message)
-      logger.critical("Emails successfully sent")
-    except Exception as e:
-      logger.critical(str(e))
-    try:
-      print("Subscription object to update", subscription)
-      logger.critical("ABOUT TO UPDATE SUBSCRIPTION OBJECT")
-      subscription.update({'last_notification': datetime.now()})
-      # subscription.save()
-      logger.critical("SUBSCRIPTION UPDATED SUCCESSFULLY")
-      # updated_subscription = storage.get(Subscription, subscription['id'])
-      print("Updated subscription object", subscription)
-    except Exception as e:
-      logger.critical(str(e))
+    payload = {
+        "subject": 'SUBSCRIPTION NOTIFICATION',
+        "body": message_body,
+        "delivery_address": users,
+        "type": 'One-time', # specify number of times the email should be sent
+        "frequency": 0, # specify the frequency of delivery 0 is the default value
+        "app_url": "https://subscriptions.abujaelectricity.com", # specify your app's url 
+        "template": 'default' # select your template choice
+    }
+
+    headers = {
+    'api-token': f'{os.environ.get("API_TOKEN")}',
+    }
+
+    email_api_endpoint = os.environ.get("END_POINT")
+    email_sent = False
+    count = 0
+    while not email_sent and count <= 5:
+        try:
+            response = requests.post(email_api_endpoint, json=payload, headers=headers)
+            # return response.status_code == 200
+            res = json.dumps(response.json())
+            if response.status_code == 200:
+                email_sent = True
+                logger.critical("Email sent successfully")
+                subscription.update({'last_notification': datetime.now()})
+                return True
+            else:
+                logger.critical(f"Email message request sent but response is {response.status_code}")
+                count += 1
+            logger.critical(f"-- API RESPONSE HERE  -- {res} ")
+        except Exception as e:
+            logger.critical(f"Request to send email NOT sent due to error {e}")
+    return False
+    # print("Send email function has begun")
+    # name = subscription.subscription_name
+    # users = storage.get_users_associated_with_a_subscription(subscription.id)
+    # print(f"Email sending to users of subscription {name}")
+    # logger.critical(f"Email sending to users of subscription {name}")
+    # mail = Mail(app)
+    # # print('GOT HERE 1')
+    # message = Message(
+    #   subject=f"Email notification for {name}",
+    #   recipients=users,
+    #   sender="justinoghenekomeebedi@gmail.com"
+    # )
+    # # print('GOT HERE 2')
+    # message.body = message_body
+    # try:
+    #   mail.send(message)
+    #   logger.critical("Emails successfully sent")
+    # except Exception as e:
+    #   logger.critical(str(e))
+    # try:
+    #   print("Subscription object to update", subscription)
+    #   logger.critical("ABOUT TO UPDATE SUBSCRIPTION OBJECT")
+    #   subscription.update({'last_notification': datetime.now()})
+    #   # subscription.save()
+    #   logger.critical("SUBSCRIPTION UPDATED SUCCESSFULLY")
+    #   # updated_subscription = storage.get(Subscription, subscription['id'])
+    #   print("Updated subscription object", subscription)
+    # except Exception as e:
+    #   logger.critical(str(e))
 
 
   def send_first_email(subscription):
