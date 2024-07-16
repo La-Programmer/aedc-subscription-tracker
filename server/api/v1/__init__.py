@@ -20,9 +20,10 @@ from celery.schedules import crontab
 from celery import shared_task
 
 
-load_dotenv()
-REDIS = os.environ.get('REDIS_LOCAL')
+load_dotenv(dotenv_path='/home/justin/aedc-subscription-tracker/server/.env.local')
+REDIS = os.environ.get('REDIS')
 SECRET = os.environ.get('SECRET_KEY')
+JWT_REDIS = os.environ.get('JWT_REDIS')
 def create_app(test_config=None) -> Flask:
   """Create and configure flask application"""
   dictConfig({
@@ -90,7 +91,7 @@ def create_app(test_config=None) -> Flask:
   jwt = JWTManager(app)
 
   jwt_redis_blocklist = StrictRedis(
-     host="localhost", port=6379, db=0, decode_responses=True
+     host=JWT_REDIS, port=6379, db=0, decode_responses=True
   )
 
   @jwt.token_in_blocklist_loader
