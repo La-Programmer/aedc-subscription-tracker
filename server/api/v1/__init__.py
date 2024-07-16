@@ -20,7 +20,7 @@ from celery.schedules import crontab
 from celery import shared_task
 
 
-load_dotenv(dotenv_path='/home/justin/aedc-subscription-tracker/server/.env.local')
+load_dotenv()
 REDIS = os.environ.get('REDIS')
 SECRET = os.environ.get('SECRET_KEY')
 JWT_REDIS = os.environ.get('JWT_REDIS')
