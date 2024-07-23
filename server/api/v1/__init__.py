@@ -20,7 +20,7 @@ from celery.schedules import crontab
 from celery import shared_task
 
 
-load_dotenv()
+# load_dotenv(dotenv_path='/home/justin/aedc-subscription-tracker/server/.env.local')
 REDIS = os.environ.get('REDIS')
 SECRET = os.environ.get('SECRET_KEY')
 JWT_REDIS = os.environ.get('JWT_REDIS')
@@ -65,9 +65,9 @@ def create_app(test_config=None) -> Flask:
         task_ignore_result=True,
         broker_connection_retry_on_startup=True,
         beat_schedule={
-           'task-every-10-seconds' : {
+           'periodic-task' : {
            "task": "api.v1.send_notification_email_task",
-           "schedule": 20,#timedelta(days=1)
+           "schedule": timedelta(days=1)
         }
       }
     ),
@@ -157,8 +157,9 @@ def create_app(test_config=None) -> Flask:
   @shared_task(ignore_result=False)
   def send_welcome_email_task(subscription):
     """Task to handle sending welcome email"""
-    print("Background job send_welcome_email_task started")
-    send_first_email(subscription)
+    name = subscription.name
+    message_body = "This is to notify you that the subscription f{name} is now being tracked"
+    send_email(subscription, message_body).delay()
 
   def check_time_to_expiry_date(expiry_date):
     """ Function to check how long to the expiry date
