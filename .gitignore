@@ -2,7 +2,11 @@ venv/
 tests/
 *cpython*
 server/setup_mysql_dev.sql
-server/*__pycache__
-server/app.log
-server/dump.rdb
-.env
+/__pycache__/
+./server/app.log
+/dump.rdb/
+.env.local
+/celerybeat-schedule.db/
+/get-pip.py/
+/flask_app.log/
+/app.log/
