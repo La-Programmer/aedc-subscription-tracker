@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 import os
 
 # Load environment variables
-load_dotenv()
+load_dotenv(dotenv_path='/home/justin/aedc-subscription-tracker/server/.env.local')
 # declare classes
 classes = {"User": User, "Subscription": Subscription}
 
@@ -89,19 +89,15 @@ class DBStorage:
   
   def update(self, obj, kwargs):
     """Updates a record in DB"""
-    print("Update begun")
     name = obj.__class__.__name__
     if name == 'Subscription':
       instance_object = self.__session.query(Subscription).filter_by(id=obj.id).first()
     elif name == 'User':
       instance_object = self.__session.query(User).filter_by(id=obj.id).first()
-    print(f"Instance Object: {instance_object}")
     for key, value in kwargs.items():
       if key == 'users':
         value = self.get_users_by_email_array(value)
       setattr(instance_object, key, value)
-    print(instance_object)
-    print("Update ended")
     
 
   def save(self):

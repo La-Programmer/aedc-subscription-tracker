@@ -2,6 +2,7 @@
 """ Index """
 from api.v1.views import app_views
 from flask import jsonify
+from flasgger.utils import swag_from
 
 # @app_views.route('/', methods=['GET'], strict_slashes=False)
 # def begin():

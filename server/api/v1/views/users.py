@@ -19,16 +19,6 @@ jwt_redis_blocklist = StrictRedis(
 @jwt_required()
 def get_users():
     """Retrieves the list of all users
-  ---
-  parameters:
-    - name: Authorization
-      in: header
-      required: true
-      description: Bearer <access token>
-      type: string
-  responses:
-    200:
-      description: All users gotten successfully
     """
     all_users = storage.all(User).values()
     list_users = []

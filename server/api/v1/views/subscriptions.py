@@ -76,7 +76,7 @@ def create_subscription():
     print(subscription_creator)
     new_subscription = Subscription(subscription_creator, **request_data)
     new_subscription.save()
-    send_welcome_email_task(new_subscription)
+    send_welcome_email_task.delay(new_subscription)
     subscription_response = new_subscription.make_api_response()
     current_app.logger.critical(f"Subscription {subscription_response['subscription_name']} has been created")
     print(subscription_response)
@@ -87,46 +87,6 @@ def create_subscription():
 @jwt_required()
 @cross_origin()
 def update_subscription(subscription_id):
-    """ 
-    Updates a subscription object
-    ---
-        tags: S
-        parameters:
-            - name: Authorization
-                in: header
-                required: true
-                description: Bearer <access token>
-                type: string
-            - name: subscription_id
-                in: path
-                required: true
-                description: The ID of the subscription to be updated
-            - name: subscription_data
-                in: body
-                required: true
-                requires:
-                    - subscription_name:
-                    - subsription_cost:
-                    - subscription_description:
-                    - expiry_date:
-                    - users
-                properties:
-                    subscription_name:
-                        type: string
-                    subscription_cost:
-                        type: integer
-                    subscription_description:
-                        type: string
-                    expiry_date:
-                        type: string
-                    users:
-                        type: string
-        responses:
-            201:
-                description: Subscription updated successfully
-            400:
-                description: Invalid JSON or missing parameters
-    """
     subscription: Subscription = storage.get(Subscription, subscription_id)
     user_id = subscription.created_by
     if (user_id != get_jwt_identity()):
