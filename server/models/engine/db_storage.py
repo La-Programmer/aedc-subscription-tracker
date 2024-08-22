@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 import os
 
 # Load environment variables
-load_dotenv(dotenv_path='/home/justin/aedc-subscription-tracker/server/.env.local')
+load_dotenv()
 # declare classes
 classes = {"User": User, "Subscription": Subscription}
 
