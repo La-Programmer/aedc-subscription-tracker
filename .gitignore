@@ -5,8 +5,8 @@ server/setup_mysql_dev.sql
 __pycache__
 app.log
 dump.rdb
-.env.local
 celerybeat-schedule.db
 get-pip.py
 flask_app.log
 app.log
+.env
