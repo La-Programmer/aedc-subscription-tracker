@@ -41,6 +41,7 @@ def send_notification_email_task():
             print("GOT HERE")
             send_email(subscription, make_email_message(subscription.subscription_name, days_remaining))
             subscription.update(subscription_status=False)
+            subscription.delete()
 
 def make_email_message(name, days):
     """Returns the subscription string"""
