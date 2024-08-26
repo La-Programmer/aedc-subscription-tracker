@@ -3,9 +3,8 @@
 Contains the class DBStorage
 """
 
-import models
-from sqlalchemy import create_engine, update
-from models.base_model import Base, BaseModel
+from sqlalchemy import create_engine
+from models.base_model import Base
 from models.user import User
 from models.subscription import Subscription
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -27,9 +26,10 @@ class DBStorage:
     USER=os.environ.get("USER")
     PASSWORD=os.environ.get("PASSWORD")
     HOST=os.environ.get("HOST")
-    DB=os.environ.get("DB") 
+    DB=os.environ.get("DB")
+    self.uri=f"mysql+mysqldb://{USER}:{PASSWORD}@{HOST}:3306/{DB}"
     # print(f'{USER}, {PASSWORD}, {HOST}, {DB}')
-    self.__engine = create_engine(f"mysql+mysqldb://{USER}:{PASSWORD}@{HOST}:3306/{DB}")    
+    self.__engine = create_engine(self.uri)    
 
   def all(self, cls=None):
     """ Gets all objects of a specific class, or all classes """
@@ -45,7 +45,7 @@ class DBStorage:
   def get(self, cls, id):
     """ Gets an object of a class by ID """
     for clss in classes:
-      if cls is classes[clss] or cls is  clss:
+      if cls is classes[clss] or cls is clss:
         obj = self.__session.query(classes[clss]).get(id)
     return (obj)
   
@@ -53,7 +53,6 @@ class DBStorage:
     """ Gets a user by email """
     # print("GOT HERE!!!!!!!!!!!")
     result = self.__session.query(User).filter_by(email=email).first()
-    print("Result", result)
     return(result)
   
   def get_all_subscriptions_for_specific_user(self, user_id):
@@ -77,8 +76,6 @@ class DBStorage:
 
   def new(self, obj):
     """Adds a newly created object to the DB session"""
-    # print("Got here")
-    # print(obj)
     self.__session.add(obj)
 
   def get_users_by_email_array(self, array):

@@ -182,7 +182,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "204": {
             "description": "Successful operation",
             "content": {
               "application/json": {
@@ -420,7 +420,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Successful operation",
             "content": {
               "application/json": {
@@ -440,7 +440,7 @@
         }
       }
     },
-    "/subscription/{subscription_id}": {
+    "/subscriptions/{subscription_id}": {
       "get": {
         "tags": ["subscriptions"],
         "summary": "Get a subscription by ID",
@@ -563,7 +563,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "204": {
             "description": "Successful operation",
             "content": {
               "application/json": {

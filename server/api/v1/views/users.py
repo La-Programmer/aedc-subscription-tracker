@@ -79,55 +79,6 @@ def user_auth():
         current_app.logger.info(f"Authentication Failed: {str(e)}")
         abort(e.response.status_code, description=f"Authentication Failed: {str(e)}")
 
-    # num = 0
-    # while num <= 5:  
-    #     try:
-    #         response_from_ad_service = requests.post(
-    #                 'https://adservice.abujaelectricity.com/auth/detail',
-    #                 json=request_data,
-    #                 )
-    #         current_app.logger.critical("User successfully authenticated")
-    #         break
-    #     except ConnectionError as e:
-    #         current_app.logger.critical(str(e))
-    #         num += 1
-    #     except Exception as e:
-    #         current_app.logger.critical(str(e))
-    #         num += 1
-    # response = response_from_ad_service.json()
-    # print(response)
-    # if (response['status_code'] == '404'):
-    #     abort(404)
-    # elif (response['status_code'] == '200'):
-    #     response_data = response['data']
-    #     print(response_data['mail'])
-    #     print("GOT TO THE ELSE OF THE CONDITIONAL STATEMENT")
-    #     user_object = {
-    #             'email': response_data['mail'],
-    #             'first_name': response_data['firstname'],
-    #             'last_name': response_data['surname']
-    #             }
-    #     user = storage.get_user_by_email(response_data['mail'])
-    #     if (user):
-    #         user_response = user.make_user_response()
-    #     current_app.logger.critical("Existing user has logged in")
-    #     access_token = create_access_token(identity=user_response['id'])
-    #     return make_response(jsonify(user=user_response, token=access_token), 200)
-    # else:
-    #     try:
-    #         new_user = User(**user_object)
-    #         new_user.save()
-    #         user_response = new_user.make_user_response()
-    #         current_app.logger.critical("New user has been created and logged in")
-    #         access_token = create_access_token(identity=user_response['id'])
-    #         resp = make_response(jsonify(user=user_response, token=access_token), 200)
-    #         return resp
-    #     except requests.exceptions.HTTPError as err:
-    #         current_app.logger.critical(
-    #                 f"New user could not be created due to error: {err.response.status_code} {err.response}"
-    #                 )
-    #         abort(err.response.status_code, description=err.response)
-
 
 @app_views.route('/users/logout', methods=['DELETE'], strict_slashes=False)
 @jwt_required()
@@ -139,6 +90,7 @@ def logout():
         current_app.logger.critical(f"Logout failed due to exception {e}")
         abort(500, description="Internal server error")
     return jsonify(msg="Access token revoked")
+
 
 @app_views.route('/users/<user_id>', methods=['PUT'],
         strict_slashes=False)

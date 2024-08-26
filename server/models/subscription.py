@@ -27,15 +27,15 @@ class Subscription(BaseModel, Base):
   start_date = Column(DateTime, default=datetime.now(), nullable=False)
   expiry_date = Column(DateTime, nullable=False)
   last_notification = Column(DateTime, default=None)
-  created_by = Column(String(60), ForeignKey('users.id'), nullable=False)
+  created_by = Column(String(60), ForeignKey('users.id', onupdate='CASCADE', ondelete='CASCADE'), nullable=False)
   users = relationship("User",
                        secondary=user_subscriptions,
                        viewonly=False)
 
   def __init__(self, user, *args, **kwargs):
-    "Iinitializes user"
+    "Initializes Subscription"
+    kwargs['created_by'] = user.id
     if kwargs['users']:
-      kwargs['created_by'] = user.id
       stakeholders_array = []
       for user in kwargs['users']:
         stakeholder = models.storage.get_user_by_email(user)

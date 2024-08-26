@@ -2,8 +2,7 @@
 """User model class declaration"""
 
 from models.base_model import BaseModel, Base
-from models.subscription import Subscription
-from sqlalchemy import Column, String, Table, ForeignKey
+from sqlalchemy import Column, String
 
 class User(BaseModel, Base):
   """User model class declaration"""
@@ -25,12 +24,3 @@ class User(BaseModel, Base):
       if key in keys:
         result[key] = user_dict[key]
     return result
-    # print("New User successfully created")
-  
-  # def create_subscription(self, *args, **kwargs):
-  #   "User creates a subscription"
-  #   kwargs["created_by"] = self.id
-  # #   new_subscription = Subscription(**kwargs)
-  #   # print("New subscription created by user {}: {}".format(self.first_name,
-  #                                                         #  new_subscription))
-  #   return(new_subscription)

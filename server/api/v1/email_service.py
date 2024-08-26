@@ -47,10 +47,9 @@ def make_email_message(name, days):
     """Returns the subscription string"""
     return f"This is to notify you that your subscription {name} will expire in {days} days."
 
-@shared_task(ignore_result=False)
 def send_welcome_email_task(subscription: Subscription):
     """Task to handle sending welcome email"""
-    name = subscription.name
+    name = subscription.subscription_name
     message_body = "This is to notify you that the subscription f{name} is now being tracked"
     send_email(subscription, message_body)
 
@@ -70,6 +69,7 @@ def check_last_notification_date(subscription: Subscription):
     days_passed = datetime.utcnow() - last_notification_date
     return days_passed.days
 
+@shared_task(ignore_result=False)
 def send_email(subscription: Subscription, message_body=None):
     """Send reminder email"""
     name = subscription.subscription_name
